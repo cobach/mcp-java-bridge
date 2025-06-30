@@ -1,0 +1,129 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'org.gegolabs.mcp'
+version = '1.0.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    // MCP SDK - Using official 0.10.0 with runtime fixes
+    api 'io.modelcontextprotocol.sdk:mcp:0.10.0'
+    
+    // Logging
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    
+    // JSON processing
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.3'
+    
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
+    testImplementation 'io.projectreactor:reactor-test:3.5.11'
+    testCompileOnly 'org.projectlombok:lombok:1.18.30'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    // withJavadocJar() // Temporarily disabled
+    withSourcesJar()
+}
+
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            
+            pom {
+                name = 'MCP Java Bridge'
+                description = 'Bridge for MCP Java SDK to support TCP transport transparently'
+                url = 'https://github.com/gegolabs/mcp-java-bridge'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'gegolabs'
+                        name = 'GegoLabs'
+                        email = 'info@gegolabs.org'
+                    }
+                }
+            }
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.named('jar') {
+    manifest {
+        attributes(
+            'Implementation-Title': 'MCP Java Bridge',
+            'Implementation-Version': version
+        )
+    }
+}
+
+// Create executable JAR for the connector
+task connectorJar(type: Jar) {
+    archiveClassifier = 'connector'
+    from sourceSets.main.output
+    manifest {
+        attributes(
+            'Main-Class': 'org.gegolabs.mcp.bridge.client.BridgeStub',
+            'Implementation-Title': 'MCP Bridge Connector',
+            'Implementation-Version': version
+        )
+    }
+    
+    // Include dependencies
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Create executable JAR for the example server
+task exampleJar(type: Jar) {
+    archiveClassifier = 'example'
+    from sourceSets.main.output
+    manifest {
+        attributes(
+            'Main-Class': 'org.gegolabs.mcp.bridge.examples.ExampleServer',
+            'Implementation-Title': 'MCP Bridge Example Server',
+            'Implementation-Version': version
+        )
+    }
+    
+    // Include dependencies
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+build.dependsOn connectorJar, exampleJar
