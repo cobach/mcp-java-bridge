@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "example-server": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "/path/to/mcp-java-bridge-1.0.0-SNAPSHOT-stub.jar",
+        "localhost",
+        "3000"
+      ]
+    },
+    "multi-server-example": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "/path/to/mcp-java-bridge-1.0.0-SNAPSHOT-stub.jar",
+        "localhost",
+        "3001"
+      ]
+    }
+  }
+}
